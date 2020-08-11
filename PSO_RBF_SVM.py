@@ -148,18 +148,19 @@ class PSO(object):
         
         
 
-## 2.3  粒子位置更新 
+## 2.3  update particle location 
     def updata(self,particle_loc,particle_dir,gbest_parameter,pbest_parameters):
-        '''粒子群位置更新
-        input:self(object):PSO类
-              particle_loc(list):粒子群位置列表
-              particle_dir(list):粒子群方向列表
-              gbest_parameter(list):全局最优参数
-              pbest_parameters(list):每个粒子的历史最优值
-        output:particle_loc(list):新的粒子群位置列表
-               particle_dir(list):新的粒子群方向列表
         '''
-        ## 1.计算新的量子群方向和粒子群位置
+        # particle swarm location update
+        input:self(object):PSO type
+              particle_loc(list):particle swarm location list
+              particle_dir(list):particle swarm direction list
+              gbest_parameter(list):gbest
+              pbest_parameters(list):history best for each particle
+        output:particle_loc(list):new particle swarm location list
+               particle_dir(list):new particle swarm direction list
+        '''
+        ## 1.calculate new quantum swarm direction and particle swarm location
         for i in range(self.particle_num): 
             a1 = [x * self.w for x in particle_dir[i]]
             a2 = [y * self.c1 * random.random() for y in list(np.array(pbest_parameters[i]) - np.array(particle_loc[i]))]
@@ -168,15 +169,15 @@ class PSO(object):
 #            particle_dir[i] = self.w * particle_dir[i] + self.c1 * random.random() * (pbest_parameters[i] - particle_loc[i]) + self.c2 * random.random() * (gbest_parameter - particle_dir[i])
             particle_loc[i] = list(np.array(particle_loc[i]) + np.array(particle_dir[i]))
             
-        ## 2.将更新后的量子位置参数固定在[min_value,max_value]内 
-        ### 2.1 每个参数的取值列表
+        ## 2.fixiate new quantum location within [min_value,max_value]
+        ### 2.1 each pram's value list
         parameter_list = []
         for i in range(self.particle_dim):
             tmp1 = []
             for j in range(self.particle_num):
                 tmp1.append(particle_loc[j][i])
             parameter_list.append(tmp1)
-        ### 2.2 每个参数取值的最大值、最小值、平均值   
+        ### 2.2 each pram's max min and mean value  
         value = []
         for i in range(self.particle_dim):
             tmp2 = []
@@ -190,9 +191,10 @@ class PSO(object):
                 
         return particle_loc,particle_dir
 
-## 2.4 画出适应度函数值变化图
+## 2.4 draw fitness function moving plot
     def plot(self,results):
-        '''画图
+        '''
+        draw plot
         '''
         X = []
         Y = []
@@ -205,15 +207,16 @@ class PSO(object):
         plt.title('PSO_RBF_SVM parameter optimization')
         plt.show() 
         
-## 2.5 主函数        
+## 2.5 main function       
     def main(self):
-        '''主函数
+        '''
+        main function
         '''
         results = []
         best_fitness = 0.0 
-        ## 1、粒子群初始化
+        ## 1、particle swarm initialization
         particle_loc,particle_dir = self.swarm_origin()
-        ## 2、初始化gbest_parameter、pbest_parameters、fitness_value列表
+        ## 2、initialize gbest_parameter、pbest_parameters、fitness_value list
         ### 2.1 gbest_parameter
         gbest_parameter = []
         for i in range(self.particle_dim):
@@ -230,11 +233,11 @@ class PSO(object):
         for i in range(self.particle_num):
             fitness_value.append(0.0)
     
-        ## 3.迭代
+        ## 3.iterations
         for i in range(self.iter_num):
-            ### 3.1 计算当前适应度函数值列表
+            ### 3.1 calculate current fitness function list
             current_fitness_value,current_best_fitness,current_best_parameter = self.fitness(particle_loc)
-            ### 3.2 求当前的gbest_parameter、pbest_parameters和best_fitness
+            ### 3.2 calculate current gbest_parameter、pbest_parameters & best_fitness
             for j in range(self.particle_num):
                 if current_fitness_value[j] > fitness_value[j]:
                     pbest_parameters[j] = particle_loc[j]
@@ -244,11 +247,11 @@ class PSO(object):
             
             print('iteration is :',i+1,';Best parameters:',gbest_parameter,';Best fitness',best_fitness)
             results.append(best_fitness)
-            ### 3.3 更新fitness_value
+            ### 3.3 update fitness_value
             fitness_value = current_fitness_value
-            ### 3.4 更新粒子群
+            ### 3.4 update particle swarm
             particle_loc,particle_dir = self.updata(particle_loc,particle_dir,gbest_parameter,pbest_parameters)
-        ## 4.结果展示
+        ## 4.show result
         results.sort()
         self.plot(results)
         print('Final parameters are :',gbest_parameter)
