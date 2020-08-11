@@ -11,26 +11,25 @@ from sklearn import cross_validation
 import random
 import matplotlib.pyplot as plt
 
-## 1.加载数据
+## 1.loading data
 def load_data(data_file):
-    '''导入训练数据
-    input:  data_file(string):训练数据所在文件
-    output: data(mat):训练样本的特征
-            label(mat):训练样本的标签
+    '''
+    # import training data
+    input:  data_file(string):file
+    output: data(mat):sample feature
+            label(mat):sample label
     '''
     data = []
     label = []
     f = open(data_file)
     for line in f.readlines():
-        lines = line.strip().split(' ')
-        
-        # 提取得出label
-        label.append(float(lines[0]))
-        # 提取出特征，并将其放入到矩阵中
-        index = 0
+        lines = line.strip().split(' ') # array
+        # get label (the first item in each line)
+        label.append(float(lines[0]))      
+        index = 0 
         tmp = []
-        for i in range(1, len(lines)):
-            li = lines[i].strip().split(":")
+        for i in range(1, len(lines)): # the remaining parts of array
+            li = lines[i].strip().split(":") 
             if int(li[0]) - 1 == index:
                 tmp.append(float(li[1]))
             else:
@@ -50,70 +49,103 @@ def load_data(data_file):
 ## 2. PSO优化算法
 class PSO(object):
     def __init__(self,particle_num,particle_dim,iter_num,c1,c2,w,max_value,min_value):
-        '''参数初始化
-        particle_num(int):粒子群的粒子数量
-        particle_dim(int):粒子维度，对应待寻优参数的个数
-        iter_num(int):最大迭代次数
-        c1(float):局部学习因子，表示粒子移动到该粒子历史最优位置(pbest)的加速项的权重
-        c2(float):全局学习因子，表示粒子移动到所有粒子最优位置(gbest)的加速项的权重
-        w(float):惯性因子，表示粒子之前运动方向在本次方向上的惯性
-        max_value(float):参数的最大值
-        min_value(float):参数的最小值
+        '''
+        # initialize prams
+        particle_num(int):number of particles
+        particle_dim(int):dimension of particles
+        iter_num(int):max iteration
+        c1(float):local learning factor, weight of history best (pbest)
+        c2(float):global learning factor, weight of global best (gbest)
+        w(float):inertia factor, inertia of particles' past direction on present direction
+        max_value(float):max pram value
+        min_value(float):min pram value
         '''
         self.particle_num = particle_num
         self.particle_dim = particle_dim
         self.iter_num = iter_num
-        self.c1 = c1  ##通常设为2.0
-        self.c2 = c2  ##通常设为2.0
+        self.c1 = c1  ## usually 2.0 pbest
+        self.c2 = c2  ## usually 2.0 gbest
         self.w = w    
         self.max_value = max_value
         self.min_value = min_value
         
         
-### 2.1 粒子群初始化
+### 2.1 particle swarm initialization
     def swarm_origin(self):
-        '''粒子群初始化
-        input:self(object):PSO类
-        output:particle_loc(list):粒子群位置列表
-               particle_dir(list):粒子群方向列表
+        '''
+        # initialize particle swarm
+        input:self(object):PSO type
+        output:particle_loc(list):particle swarm location list
+               particle_dir(list):particle swarm direction list
         '''
         particle_loc = []
         particle_dir = []
-        for i in range(self.particle_num):
+        for i in range(self.particle_num): # each particle
             tmp1 = []
             tmp2 = []
-            for j in range(self.particle_dim):
+            for j in range(self.particle_dim): # each dimension
                 a = random.random()
                 b = random.random()
                 tmp1.append(a * (self.max_value - self.min_value) + self.min_value)
                 tmp2.append(b)
-            particle_loc.append(tmp1)
-            particle_dir.append(tmp2)
+            particle_loc.append(tmp1) # randnum within min-max range
+            particle_dir.append(tmp2) # randnum 0-1
         
         return particle_loc,particle_dir
 
-## 2.2 计算适应度函数数值列表;初始化pbest_parameters和gbest_parameter   
+## 2.2 calculate fitness function list; initialize pbest_parameters & gbest_parameter   
     def fitness(self,particle_loc):
-        '''计算适应度函数值
-        input:self(object):PSO类
-              particle_loc(list):粒子群位置列表
-        output:fitness_value(list):适应度函数值列表
+        '''
+        # calculate fitness function
+        input:self(object):PSO type
+              particle_loc(list):particle swarm location list
+        output:fitness_value(list):fitness function list
         '''
         fitness_value = []
-        ### 1.适应度函数为RBF_SVM的3_fold交叉校验平均值
-        for i in range(self.particle_num):
+        ### 1. generate fitness fuction RBF_SVM's 3_fold cross check mean
+        for i in range(self.particle_num): # each particle
             rbf_svm = svm.SVC(kernel = 'rbf', C = particle_loc[i][0], gamma = particle_loc[i][1])
             cv_scores = cross_validation.cross_val_score(rbf_svm,trainX,trainY,cv =3,scoring = 'accuracy')
             fitness_value.append(cv_scores.mean())
-        ### 2. 当前粒子群最优适应度函数值和对应的参数
+            # get the list of present particle swarm's fitness values
+        ### 2. find present particle swarm's best fitness value and its loc prams
         current_fitness = 0.0
         current_parameter = []
-        for i in range(self.particle_num):
+        for i in range(self.particle_num): # each particle
             if current_fitness < fitness_value[i]:
                 current_fitness = fitness_value[i]
-                current_parameter = particle_loc[i]
+                current_parameter = particle_loc[i] # find the max fitness value and record the particle's loc
 
         return fitness_value,current_fitness,current_parameter 
+    
+    # myself propose a new fitness function, it supposes to calculate energies but I'll just pretend the locs can represent energies
+    def cal_fitness(self,particle_loc):
+        '''
+        # new way of defining a standard fitness value
+        input:self(object):PSO type
+              particle_loc(list):particle swarm location list
+        output: fitness_value(list): a list of fitness values
+        '''
+        max_energy = 0.0
+        min_energy = 1000.0
+        fitness_value = []
+        energy_list = []
+        for list1 in range(self.particle_loc):
+            for item in list1:
+                sum_ += item*item
+            energy = sum_**0.5
+            energy_list.append(energy)
+            if max_energy < energy:
+                max_energy = energy
+            if min_energy > energy:
+                min_energy = energy
+        for ene in energy_list:
+            value = (ene-min_energy)/(max_energy-min_energy)
+            fitness_value.append(value)
+            
+        return fitness_value
+                
+        
         
 
 ## 2.3  粒子位置更新 
