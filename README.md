@@ -1,2 +1,4 @@
 # PSO_python
-PSO algorithm for multi-parameters optimizaiton
+simulation & subtle modification based on existing PSO algorithms
+
+just for learning
